@@ -1,0 +1,34 @@
+
+
+RSDFT -- a matlab code for real space Density Functional Theory.
+-----------------------------------------------------------------
+
+This suite of matlab scripts perform self-consistent field (SCF) 
+iteration for solving the Kohn-Sham equation.. 
+
+1. Main driver: The main driver is main.m - this reads the same
+   input data file as parsec. [similar operation to PVOX via a 
+   python parser]. To run the code start matlab and type main.
+   This will run the example with the input file parsec_in.dat 
+   in this directory (this is the same input file as PARSEC, 
+   but only a few of the data lines are actually read).
+
+2. The main SCF code is in rsdft.m which calls:
+
+3. Three diagonalization options are provided -- 1) Lanczos for the
+   first iteration and chefsi1 thereafter. 2) Lanczos all the time
+   3) Chebyshev iteration all the time
+
+4. The conjugate gradient algorithm is used to solve the Poisson equation
+
+5. A few choices of mixers -- these are in the directory MIXER. 
+   
+6. Various other functions : exchange correlation potential -- translated
+   from parsec, and.. 
+
+7. Pseudopotential functions pseudoDiag and pseudoNL 
+   [currently being worked on] 
+   
+
+
+  

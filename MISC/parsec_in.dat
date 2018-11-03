@@ -1,0 +1,97 @@
+ #
+ # This is an input file automatically generated from
+ # ../f77/parsec.in
+ # The user is strongly encouraged to check sanity of
+ # this file before using it in a parsec90 run!!!
+ #
+ 
+ # Ab-initio calculation by the finite-difference method
+ Restart_run: .false.
+ 
+ Old_Pseudopotential_Format: .true.
+ 
+ Periodic_System: .false.
+ 
+ Boundary_Sphere_Radius: 8.
+ Grid_Spacing: 0.4
+ 
+ Expansion_Order:  4
+ 
+ States_Num:  10
+ Net_charges: 0
+ Fermi_Temp:  1000.0
+ Max_Iter:  30
+ Convergence_Criterion:  0.100000000000000005E-03
+ Diag_Tolerance:  0.100000000000000005E-03
+ Eigensolver: arpack 
+
+ Mixing_Method: Anderson
+ Mixing_Param:  0.299999999999999989
+ Memory_Param:  2
+ 
+ Atom_Types_Num:  2
+ 
+  #------------ new atom type ---------------- 
+ Atom_Type: C
+ Core_Cutoff_Radius:  3.10000000000000009
+ Local_Component: p
+ Potential_Num:  3
+ 
+ begin Electron_Per_Orbital
+ # S P D F
+ 1 0 0
+ end Electron_Per_Orbital
+ 
+ Move_Flag:  0
+ begin Atom_Coord
+1.10   0.00   0.00
+ end Atom_Coord
+ #------------ end of atom type ------------- 
+   #------------ new atom type ---------------- 
+ Atom_Type: O
+ Core_Cutoff_Radius:  3.10000000000000009
+ Local_Component: p
+ Potential_Num:  3
+ 
+ begin Electron_Per_Orbital
+ # S P D F
+ 1 0 0
+ end Electron_Per_Orbital
+ 
+ Move_Flag:  0
+ begin Atom_Coord
+-1.100  0.00  0.00
+ end Atom_Coord
+ #------------ end of atom type ------------- 
+ 
+
+ Total_Atom_Num:  1
+ 
+ Correlation_Type: pb
+ Ion_Energy_Diff:  0.644000000000000017
+ Skip_force: .false.
+# Choices are:  None, Simple, LBFGS, LINE1, LINE2, DOG, HOOK
+ Minimization: None
+ Movement_Num:  150
+# Force_Min:  0.100000000000000005E-03
+ Force_Min:  0.01
+ Scaled_Gradtol:  0.001
+ Max_Step:  5
+# Max_Step:  -1.0
+# Max_Step:  0.599999999999999978
+ Min_Step:  0.100000000000000002E-02
+# Choices are:  SR1, BFGS, BOFILL
+ Hessian_Update:  BFGS
+ Tinit:  1450.00000000000000
+ T_Final:  100.000000000000000
+ T_Step:  150.000000000000000
+ 
+ Time_Step:  200.000000000000000
+ Friction_Coefficient:  0.400000000000000019E-03
+ Step_num:  60
+ 
+ 
+ Electric_Field:  0.100000000000000002E-02
+ 
+ output_all_state .true.
+ 
