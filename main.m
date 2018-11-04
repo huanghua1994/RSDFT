@@ -41,8 +41,9 @@ disp(' ********************** ')
 disp(' DATA INPUT FOR PARSEC')
 disp(' *********************  ')
 disp('------------------------')
-in_data=input('Input data mode: 1 for manual, 2 for file:  ' );
-disp('   ')
+%in_data=input('Input data mode: 1 for manual, 2 for file:  ' );
+%disp('   ')
+in_data = 2;
 if in_data==1
   at=input('Input number of different atomic species: '  );
 disp('   ')
