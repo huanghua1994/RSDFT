@@ -176,7 +176,8 @@ end
         [W, lam] = chsubsp(poldeg, nev+15, B) ;
      else 
         disp('calling chebsf..') 
-        [W, lam] = chefsi1(W, lam, poldeg, nev, B) ;
+        %[W, lam] = chefsi1(W, lam, poldeg, nev, B) ;
+        [W, lam] = CheFSI(B, W, poldeg, lam);
      end
 %%
      diag_time = toc;

@@ -33,7 +33,7 @@ for it = 1:Max_out_iter
    lowerb  = max(ritzv) ; 
    if (lowerb > upperb), error('bounds are wrong'); end 
 %% 
-   W = ch_filter(H, W, deg, lam1, lowerb, upperb); 
+   W = Chebyshev_Filter(H, W, deg, lam1, lowerb, upperb); 
 %
 %-------------------- Rayleigh-ritz projection. 
 % orthonormalize the basis, should be replaced with better method

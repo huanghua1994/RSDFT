@@ -32,6 +32,9 @@ path(path,'SPLINES');
 Ry=13.605698066;
 include;
 
+% Use the same random seed to get the same result for the same input
+rng(2018);  
+
 [fid,message] = fopen('parsec.dat','r');
 N_atoms=0;
 if fid == -1
@@ -77,11 +80,11 @@ end
 status = fclose(fid);
 end
 %%%
-%%%%Defaut Technical Parameters
+%%%%Default Technical Parameters
 %%%%
 fd_order = 8;                         %% order of finite difference scheme 
 maxits   = 40;                         %% max SCF iterations 
-tol      = 1.e-03;                     %% tolerance for SCF iteration.
+tol      = 1.e-04;                     %% tolerance for SCF iteration.
 Fermi_temp  =  500.0 ;                %%  Smear out fermi level
 %%%%%%%%%
 %%%%%%%%%  Grid spacing from table (takes smallest h)
@@ -282,10 +285,11 @@ end
  end
 
 %%-------------------- clear persistent variables in mixer.
- clear mixer;
+clear mixer;
 %%-------------------- SCF LOOP starts here
- fprintf(fid, '\n----------------------------------\n\n');
- while (err > tol & its <= maxits) 
+scf_time_start = tic;
+fprintf(fid, '\n----------------------------------\n\n');
+while (err > tol & its <= maxits) 
      its = its+1;
      fprintf(1,'  Working ... SCF iter # %d  ... ',its)
 %%-------------------- redefine Hamiltonian    
@@ -302,7 +306,8 @@ end
         [W, lam] = chsubsp(poldeg, nev+15, B) ;
      else 
         disp('calling chebsf..') 
-        [W, lam] = chefsi1(W, lam, poldeg, nev, B) ;
+        %[W, lam] = chefsi1(W, lam, poldeg, nev, B) ;
+        [W, lam] = CheFSI(B, W, poldeg, lam);
      end
 %%
      diag_time = toc;
@@ -346,7 +351,10 @@ end
      fprintf(1,'   ... SCF error = %10.2e  \n', err) ;
 %-------------------- call mixer 
      pot = mixer(pot, potNew-pot);
- end
+end
+scf_time = toc(scf_time_start);
+fprintf('##### Total SCF time = %.2f (s)\n', scf_time);
+
  disp('          ')
   disp('**************************')
  disp(' CONVERGED SOLUTION!! ')
