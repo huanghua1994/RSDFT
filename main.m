@@ -1,20 +1,17 @@
 clear all
 
-
-
 %%% Variables and definitions
-%% A      = sparse matrix representing the discretization of the
-%%          Laplacean -- 
-%% nev    = number of eigenvalues - this is the number of occupied states
+%% Laplacian = sparse matrix representing the discretization of the Laplacian
+%% n_occ  = number of eigenvalues - this is the number of occupied states
 %% Domain = struct containing information on the physical domain.
 %% Atoms  = struct containing information on the atoms.
 %% tol    = tolerance parameter for stopping scf iteration.
 %% maxtis = maximum number of SCF iterations allowed. 
 %% fid    = output file id
 %%
-%% rho    = final charge density found
-%% lam    = eigenvalues computed - their number may be larger than nev
-%% W      = set of wave functions. 
+%% rho = final charge density found
+%% ev  = eigenvalues computed - their number may be larger than n_occ
+%% psi = set of wave functions. 
 %%============================================================ 
 %%-------------------- include file --  
 
@@ -29,7 +26,6 @@ path(path,'SPLINES');
 %%%  Derive everything else!
 %%%
 %%%   Units
-Ry=13.605698066;
 include;
 
 % Use the same random seed to get the same result for the same input
@@ -120,14 +116,14 @@ for at_typ=1:N_types
 end
 %%%%
 %%%%  hmin is the smallest recommend grid for a particular atom
-%%%%  nev is the number of eigenvalues to be fond
+%%%%  n_occ is the number of eigenvalues to be fond
 %%%%
 h=hmin;
 num_states=zelec+4;
 if num_states < 6
     num_states=6;
 end
-nev=num_states;
+n_occ=num_states;
 
 
 %%%%
@@ -173,14 +169,16 @@ sph_rad=rmax;
 
 
 fid = fopen('./rsdft.out', 'w');       %% create a output file
-
+grid_vol = h^3;
 nx = fix(2*sph_rad/h) + 1;              %%  Make sure nx is even
-nx = 2*round(nx/2+0.01)
-%h  = 2*sph_rad/(nx-1)
+nx = 2*round(nx/2+0.01);
 sph_rad=0.5*h*(nx-1);                  %%  Re-adjust R
 ny = nx;                               %% [-radis, radius] in each direction
 nz = nx;
 Domain = struct('radius', sph_rad,'nx',nx,'ny',ny,'nz',nz,'h', h);
+fprintf('  Grid points distance = %d\n', h);
+fprintf('  Grid points on each dimension = %d\n', nx);
+
 
 fprintf(fid, ' Number of states: \t%d\n\n', num_states);
 fprintf(fid,  'Atom data:\n -------------\n');
@@ -214,11 +212,12 @@ disp('     OUTPUT       ')
 disp('******************')
 disp('      ')
 disp(' Working.....constructing Laplacian matrix...')
-%% construct Laplacian operator
-A  = (1/(h*h))*fd3d(nx, ny, nz, fd_order);
 
-nsizeA = size(A);
-n      = size(A,1);
+%% construct Laplacian operator
+Laplacian = (1/(h*h))*fd3d(nx, ny, nz, fd_order);
+
+nsizeA = size(Laplacian);
+n      = size(Laplacian,1);
 Hpot   = zeros(n,1);
 pot    = Hpot;
 index0 = length(pot);
@@ -260,7 +259,7 @@ disp(' Working.....setting up nonlocal part of ionic potential...')
 indx1=length(rho0);
 h=Domain.h;
 %%
-rhoxc = rho0' ./ h^3;
+rhoxc = rho0' ./ grid_vol;
 [XCpot,exc] = exc_nspn(Domain, rhoxc, fid);
 xcpot=XCpot';
 Nelec = nelectrons(Atoms);
@@ -269,16 +268,13 @@ Fermi_temp;
 %%------------------- open output file (wfn.dat)
 %%
 wfnid = fopen('./wfn.dat', 'wb');
-indx2 = length(Ppot);
-indx3 = length(hpot0);
-indx4 = length(XCpot);
-%% indx5=length(vnl)
 pot = Ppot + hpot0 + 0.5*xcpot;
 %%-------------------- SCF LOOP
 %%-------------------- when 'preconditioning' is used call ilu0
 if (CG_prec) 
     disp('calling ilu0 ...') 
-    [L, U] = luinc(A,'0');
+    %[L, U] = luinc(Laplacian,'0');
+    [L, U] = ilu0(Laplacian);
     disp(' done.') 
     PRE = struct('L',L, 'U',U);
 end
@@ -288,27 +284,25 @@ clear mixer;
 %%-------------------- SCF LOOP starts here
 scf_time_start = tic;
 fprintf(fid, '\n----------------------------------\n\n');
-while (err > tol & its <= maxits) 
+while (err > tol && its <= maxits) 
     its = its+1;
     fprintf(1,'  Working ... SCF iter # %d  ... ',its);
     
     % Update Hamiltonian    
-    B = 0.5 * A + spdiags(pot, 0, n, n) + vnl;
+    B = 0.5 * Laplacian + spdiags(pot, 0, n, n) + vnl;
     
     % % Diagonalize Hamiltonian using the option defined in "include.m"
     tic;
-    if (diagmeth ==1 | (its == 1 & diagmeth == 0)) 
+    if (diagmeth == 1 || (its == 1 && diagmeth == 0)) 
         disp('calling lanczos..') 
         v = randn(n,1); 
-        [W, lam] = lan(B, nev+15, v, nev+500, 1.e-05);
-    elseif (its == 1 & diagmeth == 2)
-        disp('Calling SCF_Step1_CheFSI..') 
-        %[W, lam] = chsubsp(poldeg, nev+15, B);
-        [W, lam] = SCF_Step1_CheFSI(B, nev, poldeg);
+        [psi, ev] = lan(B, n_occ+15, v, n_occ+500, 1.e-05);
+    elseif (its == 1 && diagmeth == 2)
+        disp('Calling SCF_Step1_CheFSI..')
+        [psi, ev] = SCF_Step1_CheFSI(B, n_occ, poldeg);
     else 
-        disp('Calling CheFSI..') 
-        %[W, lam] = chefsi1(W, lam, poldeg, nev, B);
-        [W, lam] = CheFSI(B, W, poldeg, lam);
+        disp('Calling CheFSI..')
+        [psi, ev] = CheFSI(B, psi, poldeg, ev);
     end
     diag_time = toc;
     fprintf(fid,' \n \n SCF iter # %d  ... \n',its);
@@ -316,36 +310,31 @@ while (err > tol & its <= maxits)
     
     % Get occupation factors and Fermi-level
     % Increase Fermi temp if does not converge
-    [Fermi_level, occup] = occupations(lam(1:nev), Fermi_temp, Nelec, 0.000001);
+    [Fermi_level, occup] = occupations(ev(1:n_occ), Fermi_temp, Nelec, 0.000001);
     fprintf(fid, '   State  Eigenvalue [Ry]     Eigenvalue [eV]\n\n');
-    for i = 1:nev
-        eig = lam(i) * 2*Ry;
-        ry = eig / Ry; 
-        occ=occup(i);
-        fprintf(fid, '%5d   %15.10f   %18.10f  %5.2f\n', i, ry, eig, occ); 
+    for i = 1:n_occ
+        eig = ev(i) * 2 * Ry;
+        ry  = eig / Ry;
+        fprintf(fid, '%5d   %15.10f   %18.10f  %5.2f\n', i, ry, eig, occup(i)); 
     end
     
     % Get charge density
-    rho  = (W(:,1:nev) .* W(:,1:nev)) *2* occup;
-    hrhs = (4*pi/h^3)*(rho-rho0);
-    indx = length(rho);
-    h3   = h^3;
-    for j = 1 : indx    
-        rho(j) = rho(j) / h3;
-    end
+    rho  = (psi(:,1:n_occ) .* psi(:,1:n_occ)) * 2 * occup;
+    hrhs = (4*pi/grid_vol) .* (rho - rho0);
+    rho  = rho ./ grid_vol;
     
     tic;
     if (CG_prec) 
-        Hpot = pcg(A, hrhs, Hpot, 200, 1.e-04, PRE, 'precLU');
+        Hpot = pcg(Laplacian, hrhs, Hpot, 200, 1.e-04, PRE, 'precLU');
     else 
-        Hpot = pcg(A, hrhs, Hpot, 200, 1.e-04);
+        Hpot = pcg(Laplacian, hrhs, Hpot, 200, 1.e-04);
     end
     hart_time = toc;
     fprintf(fid, '\nHartree potential time [sec]: \t%f\n\n', hart_time);
     
     [XCpot,exc] = exc_nspn(Domain, rho, fid);
-    HHpot = Hpot; 
-    potNew = Ppot+0.5*XCpot+Hpot+hpot0;
+    HHpot  = Hpot; 
+    potNew = Ppot + 0.5 * XCpot + Hpot + hpot0;
     err = norm(potNew - pot) / norm(potNew);
     fprintf(fid,'   ... SCF error = %10.2e  \n', err) ;
     fprintf(1,'   ... SCF error = %10.2e  \n', err) ;
@@ -362,8 +351,8 @@ disp(' CONVERGED SOLUTION!! ')
 disp('**************************')
 disp('         ')
 fprintf(1, '   State  Eigenvalue [Ry]     Eigenvalue [eV]  Occupation \n');
-for i = 1:nev
-    eig = lam(i) * 2*Ry;
+for i = 1:n_occ
+    eig = ev(i) * 2*Ry;
     ry = eig / Ry; 
     occ=2*occup(i);
     fprintf(1, '%5d   %15.4f   %18.3f  %10.2f\n', i, ry, eig, occ); 
@@ -371,17 +360,17 @@ end
 %%  
 %%-------------------- total energy 
 %%  Sum over eigenvalues--Put everything in Ryd
-Esum= sum(lam(1:nev).*occup(1:nev)); 
+Esum= sum(ev(1:n_occ).*occup(1:n_occ)); 
 Esum0=4*Esum;
 %%
 %%--------------------   Hartree potential
 %%  Factor of two for double counting--converts to Ryd
-Hsum0=sum(rho.*(Hpot+hpot0))*h^3;
+Hsum0=sum(rho.*(Hpot+hpot0))*grid_vol;
 %%
 %%-------------------- Exchange correlaion sum
 %% No factor of two because energy is in Ry
 %%
-Vxcsum0=sum(rho.*XCpot)*h^3;
+Vxcsum0=sum(rho.*XCpot)*grid_vol;
 Excsum0=exc;
 %%--------------------  Total electronic energy
 %%
@@ -451,12 +440,12 @@ rho_length = length(rho(:,1));
 fwrite(wfnid, rho_length, 'uint32');
 fwrite(wfnid, rho, 'double');
 
-w_length = length(W(:,1));
-w_col_length = length(W(1,:));
+w_length = length(psi(:,1));
+w_col_length = length(psi(1,:));
 fwrite(wfnid, w_length, 'uint32' );
-fwrite(wfnid, nev, 'uint32');
-for i = 1:nev
-    fwrite(wfnid, W(:, i), 'double');
+fwrite(wfnid, n_occ, 'uint32');
+for i = 1:n_occ
+    fwrite(wfnid, psi(:, i), 'double');
 end
 
 fclose(wfnid);
