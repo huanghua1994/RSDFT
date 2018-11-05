@@ -172,8 +172,8 @@ end
         [W, lam] = lan(B, nev+15, v, nev+400, 1.e-06);
      elseif (its == 1 & diagmeth == 2)
         disp('calling chsubsp..') 
-        v = randn(n,1); 
-        [W, lam] = chsubsp(poldeg, nev+15, B) ;
+        %[W, lam] = chsubsp(poldeg, nev+15, B);
+        [W, lam] = SCF_Step1_CheFSI(B, nev, poldeg);
      else 
         disp('calling chebsf..') 
         %[W, lam] = chefsi1(W, lam, poldeg, nev, B) ;

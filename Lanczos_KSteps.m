@@ -1,6 +1,11 @@
-function max_ev = Lanczos_MaxEigVal(H, k)
-% Estimate the upper bound of matrix H's eigenvalues by k-step Lanczos
-% k is optional, default is 6
+function [lambda, f_2norm] = Lanczos_KSteps(H, k)
+% Estimating max / min eigenvalue bounds using k-step Lanczos
+% Input:
+%   H : Target matrix
+%   k : Number of Lanczos steps, (optional, default is 6)
+% Output:
+%   lambda  : Eigenvalues of tridiagonal matrix T
+%   f_2norm : 2-norm of vector f
     if (nargin == 1), k = 6; end;
     
     T = zeros(k);
@@ -23,5 +28,6 @@ function max_ev = Lanczos_MaxEigVal(H, k)
         T(j - 1, j) = b;
         T(j, j) = a;
     end
-    max_ev = norm(T, 2) + norm(f, 2);
+    lambda  = eig(T);
+    f_2norm = norm(f, 2);
 end

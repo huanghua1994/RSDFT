@@ -302,11 +302,12 @@ while (err > tol & its <= maxits)
         v = randn(n,1); 
         [W, lam] = lan(B, nev+15, v, nev+500, 1.e-05);
     elseif (its == 1 & diagmeth == 2)
-        disp('calling chsubsp..') 
-        [W, lam] = chsubsp(poldeg, nev+15, B) ;
+        disp('Calling SCF_Step1_CheFSI..') 
+        %[W, lam] = chsubsp(poldeg, nev+15, B);
+        [W, lam] = SCF_Step1_CheFSI(B, nev, poldeg);
     else 
-        disp('calling chebsf..') 
-        %[W, lam] = chefsi1(W, lam, poldeg, nev, B) ;
+        disp('Calling CheFSI..') 
+        %[W, lam] = chefsi1(W, lam, poldeg, nev, B);
         [W, lam] = CheFSI(B, W, poldeg, lam);
     end
     diag_time = toc;
