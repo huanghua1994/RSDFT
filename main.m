@@ -82,7 +82,7 @@ end
 fd_order = 8;                         %% order of finite difference scheme 
 maxits   = 40;                         %% max SCF iterations 
 tol      = 1.e-04;                     %% tolerance for SCF iteration.
-Fermi_temp  =  500.0 ;                %%  Smear out fermi level
+Fermi_temp  =  1000.0 ;                %%  Smear out fermi level
 %%%%%%%%%
 %%%%%%%%%  Grid spacing from table (takes smallest h)
 %%%%%%%%%
@@ -260,10 +260,9 @@ indx1=length(rho0);
 h=Domain.h;
 %%
 rhoxc = rho0' ./ grid_vol;
-[XCpot,exc] = exc_nspn(Domain, rhoxc, fid);
-xcpot=XCpot';
+[XCpot, exc] = exc_nspn(Domain, rhoxc, fid);
+xcpot = XCpot';
 Nelec = nelectrons(Atoms);
-Fermi_temp;
 %%
 %%------------------- open output file (wfn.dat)
 %%
