@@ -1,4 +1,5 @@
 function Y = Chebyshev_Filter(H, X, m, a0, a, b)
+% function Y = Chebyshev_Filter(H, X, m, a0, a, b)
 % Filter vectors by a m-degree Chebyshev polynomial on a given interval
 % Input:
 %   H    : Hamiltonian matrix

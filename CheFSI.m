@@ -1,4 +1,5 @@
 function [psi_out, rv_out] = CheFSI(H, psi, m, rv)
+% function [psi_out, rv_out] = CheFSI(H, psi, m, rv)
 % Chebyshev-filtered subspace iteration for SCF 
 % Input:
 %   H   : Hamiltonian matrix

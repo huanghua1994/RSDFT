@@ -1,4 +1,5 @@
 function [lambda, f_2norm] = Lanczos_KSteps(H, k)
+% function [lambda, f_2norm] = Lanczos_KSteps(H, k)
 % Estimating max / min eigenvalue bounds using k-step Lanczos
 % Input:
 %   H : Target matrix

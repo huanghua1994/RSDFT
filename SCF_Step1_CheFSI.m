@@ -1,5 +1,6 @@
 function [psi, rv] = SCF_Step1_CheFSI(H, n_occ, m)
-% First SCF step diagonalization by CheFSI
+% function [psi, rv] = SCF_Step1_CheFSI(H, n_occ, m)
+% First SCF step diagonalization using CheFSI
 % Input:
 %   H     : Hamiltonian matrix
 %   n_occ : Number of occupied orbitals
