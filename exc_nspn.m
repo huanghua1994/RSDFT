@@ -1,69 +1,49 @@
-function [vxc, exc] = exc_nspn(Domain, rho, fid) 
-%% [rhoxc, exc] = function (Domain, rho) 
-%%      LDA variables:
-%%      various recurring parameters in the exchange-correlation
-%%      formulas: 
-%%      quantities common to all local density expressions:
-%%      rs is the local value of the Wigner-Seitz radius
-%%      rho temporarily stores the charge at a given grid point
-%%      Ceperley-Alder parameters
-%%      fid = output file id
-g  =-0.2846;  b1 = 1.0529;
-b2 = 0.3334; c1 = 0.0622;
-c2 = 0.096;  c3 = 0.004;
-c4 = 0.0232; c5 = 0.0192;
-%% 
-zero = 0.0;     one = 1.0;    two = 2.0;     four = 4.0;  nine = 9.0;
-third = 1/3; 
-%%      actual number of grid points
- ndim = length(rho);
-%%   ---------------------------------------------------------------
- a0 = (four/(nine*pi))^third;
- twovpia0 = two/(pi*a0);
- p75vpi = 0.75/pi;
-%% 
- vxc = rho;
-%%      find max and min values of the charge density and report
-dmax = max(vxc(1:ndim));
-dmin = min(vxc(1:ndim));
-%%      warn (but do not kill) if negative values found
-%% 
-fprintf(fid,' max and min values of charge density [e/bohr^3]');
-fprintf(fid,'   %10.5e   %10.5e  \n', dmax, dmin);
-if (dmin < zero) 
-         fprintf(1,'warning in excorr.f: \n')
-         fprintf(1,'NEGATIVE CHARGE DENSITY FOUND .\n')
-end
-%% 
-%%      initialize the total exchange-correlation energy to zero
-%% 
-exc = zero;
-%% 
-%%      Ceperly-Alder exchange correlation
+function [vxc, exc] = exc_nspn(rho, grid_vol) 
+% function [vxc, exc] = exc_nspn(rho, grid_vol) 
+% LDA, Ceperly-Alder exchange correlation
+% Input:
+%   rho      : Charge density at given grid points
+%   grid_vol : Volume of a gird cell
+% Output:
+%   vxc : Exchange-correlation values at given grid points
+%   exc : Exchange-correlation energy
 
-      for i=1:ndim
-         rho = vxc(i);
-         vxc(i) = zero;
-         if (rho > zero) 
-            rs = (p75vpi/rho)^third;
-            vxc(i) = -twovpia0/rs;
-            exc = exc + 0.75*rho*vxc(i);
-            if (rs >= one)
-               sqrs = sqrt(rs);
-               ec = g/(one + b1*sqrs + b2*rs);
-               vxc(i) = vxc(i) + ...
-               ec*ec*(one+3.5*b1*sqrs*third+four*b2*rs*third)/g;
+    g  = -0.2846;  b1 = 1.0529;
+    b2 =  0.3334;  c1 = 0.0622;
+    c2 =  0.0960;  c3 = 0.0040;
+    c4 =  0.0232;  c5 = 0.0192;
+    
+    one_third = 1/3; 
+    a0 = (4 / (9 * pi))^one_third;
+    twovpia0 = 2 / (pi * a0);
+    p75vpi = 0.75 / pi;
+    
+    % Ceperly-Alder exchange correlation
+    % rs is the local value of the Wigner-Seitz radius
+    ngpt = length(rho);
+    vxc  = zeros(ngpt, 1);
+    exc  = 0;
+    for i = 1 : ngpt
+        rho_i = rho(i);
+        vxc_i = 0;
+        if (rho_i > 0) 
+            rs = (p75vpi / rho_i)^one_third;
+            vxc_i = -twovpia0 / rs;
+            exc = exc + 0.75 * vxc_i * rho_i;
+            if (rs >= 1)
+                sqrs = sqrt(rs);
+                ec = g / (1 + b1 * sqrs + b2 * rs);
+                vxc_i = vxc_i + ec * ec * (1 + 3.5 * b1 * sqrs * one_third + 4 * b2 * rs * one_third) / g;
             else
-               alpha = log(rs);
-               ec = c1*alpha - c2 + (c3*alpha - c4)*rs;
-               vxc(i) = vxc(i) + ...
-                   ec - (c1 + (c3*alpha - c5)*rs)*third;
+                alpha = log(rs);
+                ec = c1 * alpha - c2 + (c3 * alpha - c4) * rs;
+                vxc_i = vxc_i + ec - (c1 + (c3 * alpha - c5) * rs) * one_third;
             end
-            exc = exc + rho*ec;
-         end
-      end 
-%% 
-%%      scale the total energy integral by h^3 (factor necessary due to the;
-%%      expression of an integral as a summation over grid points);
-%% 
-    exc  = exc * (Domain.h)^3;
+            exc = exc + rho_i * ec;
+        end
+        vxc(i) = vxc_i;
+    end 
+    
+    % Scale the total energy integral by the grid cell volume
+    exc  = exc * grid_vol;
+end

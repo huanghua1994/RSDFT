@@ -260,8 +260,17 @@ indx1=length(rho0);
 h=Domain.h;
 %%
 rhoxc = rho0' ./ grid_vol;
-[XCpot, exc] = exc_nspn(Domain, rhoxc, fid);
-xcpot = XCpot';
+% Report max and min values of the charge density
+dmax = max(rhoxc(:));
+dmin = min(rhoxc(:));
+fprintf(fid,' max and min values of charge density [e/bohr^3]');
+fprintf(fid,'   %10.5e   %10.5e  \n', dmax, dmin);
+if (dmin < 0) 
+    fprintf(1,'warning in excorr.f: \n')
+    fprintf(1,'NEGATIVE CHARGE DENSITY FOUND .\n')
+end
+
+[xcpot, exc] = exc_nspn(rhoxc, grid_vol);
 Nelec = nelectrons(Atoms);
 %%
 %%------------------- open output file (wfn.dat)
@@ -331,7 +340,17 @@ while (err > tol && its <= maxits)
     hart_time = toc;
     fprintf(fid, '\nHartree potential time [sec]: \t%f\n\n', hart_time);
     
-    [XCpot,exc] = exc_nspn(Domain, rho, fid);
+    % Report max and min values of the charge density
+    dmax = max(rho(:));
+    dmin = min(rho(:));
+    fprintf(fid,' max and min values of charge density [e/bohr^3]');
+    fprintf(fid,'   %10.5e   %10.5e  \n', dmax, dmin);
+    if (dmin < 0) 
+        fprintf(1,'warning in excorr.f: \n')
+        fprintf(1,'NEGATIVE CHARGE DENSITY FOUND .\n')
+    end
+    
+    [XCpot,exc] = exc_nspn(rho, grid_vol);
     HHpot  = Hpot; 
     potNew = Ppot + 0.5 * XCpot + Hpot + hpot0;
     err = norm(potNew - pot) / norm(potNew);
