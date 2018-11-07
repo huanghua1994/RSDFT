@@ -238,9 +238,9 @@ Ry  = 13.605698066;
 %%--------------------  Local part of the pseudopotential
 %%
 disp(' Working.....setting up ionic potential...')
-[rho0, hpot0, Ppot]  = pseudoDiag(Domain, Atoms);
+[rho0, Hpot0, Ppot]  = pseudoDiag(Domain, Atoms);
 %%%%%%%
-hpsum0=sum(rho0.*hpot0)*Ry;
+hpsum0=sum(rho0.*Hpot0)*Ry;
 fprintf(fid,' Initial Hartree energy (eV) = %10.5f  \n', hpsum0) ;
 %%-------------------- count # atoms for stats
 n_atoms  = 0;
@@ -266,17 +266,19 @@ dmin = min(rhoxc(:));
 fprintf(fid,' max and min values of charge density [e/bohr^3]');
 fprintf(fid,'   %10.5e   %10.5e  \n', dmax, dmin);
 if (dmin < 0) 
-    fprintf(1,'warning in excorr.f: \n')
-    fprintf(1,'NEGATIVE CHARGE DENSITY FOUND .\n')
+    fprintf(1,'warning in excorr.f: \n');
+    fprintf(1,'NEGATIVE CHARGE DENSITY FOUND .\n');
 end
 
-[xcpot, exc] = exc_nspn(rhoxc, grid_vol);
+zero_rhoxc = (rhoxc == 0);
+[xcpot, exc] = XC_Update(rhoxc, grid_vol);
+xcpot(zero_rhoxc) = 0.0;
 Nelec = nelectrons(Atoms);
 %%
 %%------------------- open output file (wfn.dat)
 %%
 wfnid = fopen('./wfn.dat', 'wb');
-pot = Ppot + hpot0 + 0.5*xcpot;
+pot = Ppot + Hpot0 + 0.5*xcpot;
 %%-------------------- SCF LOOP
 %%-------------------- when 'preconditioning' is used call ilu0
 if (CG_prec) 
@@ -346,13 +348,12 @@ while (err > tol && its <= maxits)
     fprintf(fid,' max and min values of charge density [e/bohr^3]');
     fprintf(fid,'   %10.5e   %10.5e  \n', dmax, dmin);
     if (dmin < 0) 
-        fprintf(1,'warning in excorr.f: \n')
-        fprintf(1,'NEGATIVE CHARGE DENSITY FOUND .\n')
+        fprintf(1,'warning in excorr.f: \n');
+        fprintf(1,'NEGATIVE CHARGE DENSITY FOUND .\n');
     end
     
-    [XCpot,exc] = exc_nspn(rho, grid_vol);
-    HHpot  = Hpot; 
-    potNew = Ppot + 0.5 * XCpot + Hpot + hpot0;
+    [XCpot, exc] = XC_Update(rho, grid_vol);
+    potNew = Ppot + 0.5 * XCpot + Hpot + Hpot0;
     err = norm(potNew - pot) / norm(potNew);
     fprintf(fid,'   ... SCF error = %10.2e  \n', err) ;
     fprintf(1,'   ... SCF error = %10.2e  \n', err) ;
@@ -383,7 +384,7 @@ Esum0=4*Esum;
 %%
 %%--------------------   Hartree potential
 %%  Factor of two for double counting--converts to Ryd
-Hsum0=sum(rho.*(Hpot+hpot0))*grid_vol;
+Hsum0=sum(rho.*(Hpot+Hpot0))*grid_vol;
 %%
 %%-------------------- Exchange correlaion sum
 %% No factor of two because energy is in Ry
